@@ -16,6 +16,12 @@ class Tetris:
         self.empty_pix = " "
         # middle of container
         self.width_middle = int(self.width / 2)
+        # score
+        self.score = 0
+        # deleted lines
+        self.deleted_lines = 0
+        # level
+        self.level = 1
         # instant for blocks
         wm = self.width_middle
         h = 0
@@ -60,6 +66,9 @@ class Tetris:
             print('*', end='')
             print()
         print('', '* '*self.width)
+        print("Level: {}".format(self.level))
+        print("Score: {}".format(self.score))
+        print("Lines: {}".format(self.deleted_lines))
 
     # spawning random figure and took this figure on the board
     def spawn_random_figure(self):
@@ -201,6 +210,7 @@ class Tetris:
                 elif self.game_field[y][x] == 1:
                     self.game_field[y + 1][x] = 1
                 self.game_field[y][x] = 0
+            self.score += 1
         # else this figure transform in "frozen" figure
         else:
             for block in full_block:
@@ -224,6 +234,19 @@ class Tetris:
                     for line in self.available_lines:
                         if blocks == line:
                             self.lines_for_del.append(y)
+        # add points to score and count deleted lines
+        if len(self.lines_for_del) == 1:
+            self.score += 100
+            self.deleted_lines += 1
+        elif len(self.lines_for_del) == 2:
+            self.score += 300
+            self.deleted_lines += 2
+        elif len(self.lines_for_del) == 3:
+            self.score += 500
+            self.deleted_lines += 3
+        elif len(self.lines_for_del) == 4:
+            self.score += 800
+            self.deleted_lines += 4
         # delete lines blocks from deleted lines
         for line in self.lines_for_del:
             for block_x in range(self.width):
@@ -248,11 +271,35 @@ class Tetris:
                 self.game_field[y][x] = 0
                 self.game_field[y + 1][x] = 3
 
+    def make_lvl(self):
+        if 1000 < self.score < 2000:
+            self.level = 2
+        elif 2000 < self.score < 3000:
+            self.level = 3
+        elif 3000 < self.score < 5000:
+            self.level = 4
+        elif 5000 < self.score < 10000:
+            self.level = 5
+        elif 10000 < self.score < 20000:
+            self.level = 6
+        elif 20000 < self.score < 50000:
+            self.level = 7
+        elif 50000 < self.score < 200000:
+            self.level = 8
+        elif 200000 < self.score < 500000:
+            self.level = 9
+        elif 500000 < self.score < 1000000:
+            self.level = 10
+        FPS = self.level
+        return FPS
+
 
 tetris = Tetris()
-FPS = 1
+is_boost = False
 # main game loop
 while True:
+    if not is_boost:
+        FPS = tetris.make_lvl()
     tetris.spawn_random_figure()
     tetris.render_game_field(FPS)
     # delete lines of field if it needs
@@ -261,15 +308,22 @@ while True:
         tetris.falling_of_reminder()
     if msvcrt.kbhit():
         input = msvcrt.getch().decode()
+        if input == ' ':
+            tetris.print_game_field()
+            os.system('pause')
+            os.system('cls')
+
         if input == 'w':
             tetris.rotate_figure()
         elif input == 'a' or input == 'd':
             tetris.move_figure(input)
         elif input == 's':
-            if FPS == 1:
-                FPS = 5
-            elif FPS == 5:
-                FPS = 1
+            if FPS != 11:
+                is_boost = True
+                FPS = 11
+            elif FPS == 11:
+                FPS = tetris.level
+                is_boost = False
     else:
         tetris.figure_falling()
 
